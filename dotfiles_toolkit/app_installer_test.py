@@ -1,12 +1,16 @@
 import os
 from pathlib import Path
 
-from app_installer import AppInstaller
+from .app_installer import AppInstaller
 
 
 def test_app_installer_create_symlink():
+
     file_target = Path('/tmp/file_target')
     file_link = Path('/tmp/file_link')
+
+    os.remove(file_link)
+    os.remove(file_target)
 
     with open(file_target, 'w') as file:
         file.write("target file")
