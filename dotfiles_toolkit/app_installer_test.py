@@ -24,16 +24,15 @@ class TestAppInstaller:
         assert file_link.resolve() == file_target.resolve()
 
     def test_create_temp_path(self):
-        temp_dir, temp_file = AppInstaller.create_temp_path()
+        temp_dir = AppInstaller.create_temp_path()
 
         assert temp_dir.exists()
         assert temp_dir.is_dir()
-        assert temp_file == None
 
         temp_dir.rmdir()
 
     def test_create_temp_path_with_path(self):
-        temp_dir, temp_file = AppInstaller.create_temp_path('my_file.txt')
+        temp_file = AppInstaller.create_temp_path('my_file.txt')
         temp_file.touch()
 
         assert temp_file.exists()
@@ -41,4 +40,4 @@ class TestAppInstaller:
         assert temp_file.name == 'my_file.txt'
 
         temp_file.unlink()
-        temp_dir.rmdir()
+        temp_file.parent.rmdir()

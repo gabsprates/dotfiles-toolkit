@@ -36,10 +36,10 @@ class AppInstaller:
         link.symlink_to(target)
 
     @staticmethod
-    def create_temp_path(path: str | None = None) -> tuple[Path, Path | None]:
+    def create_temp_path(path: str | None = None) -> Path:
         root_dir = Path(tempfile.mkdtemp())
 
         if path:
-            return root_dir, root_dir.joinpath(path)
+            return root_dir.joinpath(path)
 
-        return root_dir, None
+        return root_dir
