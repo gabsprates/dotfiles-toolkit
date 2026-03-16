@@ -1,5 +1,7 @@
 # Dotfiles Toolkit
 
+[![GitHub tag](https://img.shields.io/github/tag/gabsprates/dotfiles-toolkit.svg)](https://GitHub.com/gabsprates/dotfiles-toolkit/tags/)
+
 Add to your dotfiles' `requirements.txt`:
 
 ```
@@ -38,4 +40,7 @@ class TerminatorInstaller(AppInstaller):
 
 ## WIP
 
+- [ ] AppInstaller
+  - [ ] downlaod
+  - [ ] temp path
 - [ ] Plugin loader
