@@ -1,4 +1,5 @@
 import os
+import tempfile
 
 from pathlib import Path
 
@@ -28,8 +29,17 @@ class AppInstaller:
             "Plugins must implement the 'customize' method.")
 
     @staticmethod
-    def create_symlink(link: Path, target: Path):
+    def create_symlink(link: Path, target: Path) -> None:
         if link.is_file():
             os.remove(link)
 
         link.symlink_to(target)
+
+    @staticmethod
+    def create_temp_path(path: str | None = None) -> tuple[Path, Path | None]:
+        root_dir = Path(tempfile.mkdtemp())
+
+        if path:
+            return root_dir, root_dir.joinpath(path)
+
+        return root_dir, None
