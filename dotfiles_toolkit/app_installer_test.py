@@ -1,32 +1,26 @@
-import os
-from pathlib import Path
+import random
 
+from pathlib import Path
 from .app_installer import AppInstaller
 
 
-def test_app_installer_create_symlink():
+class TestAppInstaller:
 
-    file_target = Path('/tmp/file_target')
-    file_link = Path('/tmp/file_link')
+    def test_create_symlink(self, tmp_path: Path):
+        file_target = tmp_path.joinpath('file_target')
+        file_link = tmp_path.joinpath('file_link')
 
-    os.remove(file_link)
-    os.remove(file_target)
+        file_target.write_text(str(random.random()))
 
-    with open(file_target, 'w') as file:
-        file.write("target file")
+        assert not file_link.exists()
 
-    assert file_link.exists() == False
+        AppInstaller.create_symlink(
+            link=file_link,
+            target=file_target
+        )
 
-    AppInstaller.create_symlink(
-        link=file_link,
-        target=file_target
-    )
+        assert file_link.exists()
 
-    assert file_link.exists() == True
+        assert file_link.is_symlink()
 
-    assert file_link.is_symlink() == True
-
-    assert file_link.resolve() == file_target.resolve()
-
-    os.remove(file_link)
-    os.remove(file_target)
+        assert file_link.resolve() == file_target.resolve()
