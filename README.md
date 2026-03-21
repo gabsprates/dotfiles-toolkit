@@ -5,7 +5,7 @@
 Add to your dotfiles' `requirements.txt`:
 
 ```
-dotfiles_toolkit @ git+https://github.com/gabsprates/dotfiles-toolkit@0.3.0
+dotfiles_toolkit @ git+https://github.com/gabsprates/dotfiles-toolkit@0.4.0
 ```
 
 And use it in your plugin:
