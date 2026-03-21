@@ -42,7 +42,14 @@ class TestAppInstaller:
 
         assert file_link.resolve() == file_target.resolve()
 
-    def test_create_temp_path(self):
+    def test_create_temp_path(self, monkeypatch):
+        def fake_mkdtemp():
+            temp_path = Path("/tmp/temp_test")
+            temp_path.mkdir()
+            return temp_path
+
+        monkeypatch.setattr(tempfile, "mkdtemp", fake_mkdtemp)
+
         temp_dir = AppInstaller.create_temp_path()
 
         assert temp_dir.exists()
@@ -50,7 +57,14 @@ class TestAppInstaller:
 
         temp_dir.rmdir()
 
-    def test_create_temp_path_with_path(self):
+    def test_create_temp_path_with_path(self, monkeypatch):
+        def fake_mkdtemp():
+            temp_path = Path("/tmp/temp_test")
+            temp_path.mkdir()
+            return temp_path
+
+        monkeypatch.setattr(tempfile, "mkdtemp", fake_mkdtemp)
+
         temp_file = AppInstaller.create_temp_path('my_file.txt')
         temp_file.touch()
 
