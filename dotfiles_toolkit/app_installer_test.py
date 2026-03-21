@@ -1,5 +1,23 @@
-from pathlib import Path
+import json
+import pytest
+import urllib.request
+
 from .app_installer import AppInstaller
+from pathlib import Path
+
+
+def makeFakeResponse(mockreturn):
+    class FakeResponse:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            pass
+
+        def read(self):
+            return json.dumps(mockreturn).encode("utf-8")
+
+    return FakeResponse()
 
 
 class TestAppInstaller:
@@ -41,3 +59,46 @@ class TestAppInstaller:
 
         temp_file.unlink()
         temp_file.parent.rmdir()
+
+    def test_get_asset_url_from_github(self, monkeypatch):
+        mockreturn = {
+            "assets": [
+                {
+                    "browser_download_url": "https://github.com/owner/repo/asset/dotfiles_toolkit_LINUX_x86_64.tar.gz"
+                },
+            ]
+        }
+
+        def fake_urlopen(url):
+            return makeFakeResponse(mockreturn)
+
+        monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+
+        release_url = AppInstaller.get_asset_url_from_github(
+            owner="gabsprates",
+            repo="dotfiles_toolkit",
+            filter=lambda url: url.lower().endswith("_linux_x86_64.tar.gz"),
+        )
+
+        assert release_url == mockreturn["assets"][0]["browser_download_url"]
+
+    def test_get_asset_url_from_github_error(self, monkeypatch):
+        mockreturn = {
+            "assets": [
+                {
+                    "browser_download_url": "https://github.com/owner/repo/asset/dotfiles_toolkit_LINUX_x86_64.zip"
+                },
+            ]
+        }
+
+        def fake_urlopen(url):
+            return makeFakeResponse(mockreturn)
+
+        monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+
+        with pytest.raises(FileNotFoundError):
+            _ = AppInstaller.get_asset_url_from_github(
+                owner="gabsprates",
+                repo="dotfiles_toolkit",
+                filter=lambda url: url.lower().endswith("_linux_x86_64.tar.gz"),
+            )

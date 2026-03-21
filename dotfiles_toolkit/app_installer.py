@@ -1,6 +1,9 @@
+import json
 import os
 import tempfile
+import urllib.request
 
+from collections.abc import Callable
 from pathlib import Path
 
 
@@ -43,3 +46,20 @@ class AppInstaller:
             return root_dir.joinpath(path)
 
         return root_dir
+
+    @staticmethod
+    def get_asset_url_from_github(
+        owner: str,
+        repo: str,
+        filter: Callable[[str], bool],
+    ) -> str:
+        url_releases = f"https://api.github.com/repos/{owner}/{repo}/releases/latest"
+
+        with urllib.request.urlopen(url_releases) as response:
+            json_data = json.loads(response.read().decode())
+
+            for asset in json_data['assets']:
+                if filter(asset['browser_download_url']):
+                    return asset['browser_download_url']
+
+        raise FileNotFoundError()
