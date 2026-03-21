@@ -1,5 +1,6 @@
 import json
 import pytest
+import tempfile
 import urllib.request
 
 from .app_installer import AppInstaller
@@ -102,3 +103,31 @@ class TestAppInstaller:
                 repo="dotfiles_toolkit",
                 filter=lambda url: url.lower().endswith("_linux_x86_64.tar.gz"),
             )
+
+    def test_download(self, monkeypatch):
+        base_temp_dir = Path("/tmp/temp_test")
+
+        def fake_mkdtemp():
+            temp_path = base_temp_dir
+            temp_path.mkdir()
+            return temp_path
+
+        def fake_urlretrieve(url, filename):
+            temp_file = base_temp_dir.joinpath(filename)
+            temp_file.touch()
+            return temp_file
+
+        monkeypatch.setattr(tempfile, "mkdtemp", fake_mkdtemp)
+        monkeypatch.setattr(urllib.request, "urlretrieve", fake_urlretrieve)
+
+        url = "https://github.com/asdf-vm/asdf/releases/download/v0.18.1/asdf-v0.18.1-darwin-arm64.tar.gz"
+        filename = "asdf.tar.gz"
+
+        temp_file = AppInstaller.download(url, filename)
+
+        assert temp_file.exists()
+        assert temp_file.is_file()
+        assert temp_file.name == filename
+
+        temp_file.unlink()
+        temp_file.parent.rmdir()

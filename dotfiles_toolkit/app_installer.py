@@ -63,3 +63,11 @@ class AppInstaller:
                     return asset['browser_download_url']
 
         raise FileNotFoundError()
+
+    @staticmethod
+    def download(url: str, filename: str) -> Path:
+        temp_file = AppInstaller.create_temp_path(filename)
+
+        actual_file, _ = urllib.request.urlretrieve(url, temp_file)
+
+        return Path(actual_file)
