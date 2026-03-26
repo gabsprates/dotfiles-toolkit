@@ -7,18 +7,35 @@ from .app_installer import AppInstaller
 from pathlib import Path
 
 
-def makeFakeResponse(mockreturn):
-    class FakeResponse:
-        def __enter__(self):
-            return self
+class FakeResponse:
+    def __init__(self, payload: dict):
+        self.payload = payload
 
-        def __exit__(self, exc_type, exc, tb):
-            pass
+    def __enter__(self):
+        return self
 
-        def read(self):
-            return json.dumps(mockreturn).encode("utf-8")
+    def __exit__(self, exc_type, exc, tb):
+        pass
 
-    return FakeResponse()
+    def read(self):
+        return json.dumps(self.payload).encode("utf-8")
+
+
+@pytest.fixture
+def fake_github_response():
+    return lambda payload: FakeResponse(payload)
+
+
+@pytest.fixture
+def fake_mkdtemp(monkeypatch, tmp_path):
+    def _mock():
+        path = tmp_path.joinpath('temp_dir')
+        path.mkdir(exist_ok=True)
+        return path
+
+    monkeypatch.setattr(tempfile, "mkdtemp", _mock)
+
+    return _mock
 
 
 class TestAppInstaller:
@@ -37,34 +54,16 @@ class TestAppInstaller:
         )
 
         assert file_link.exists()
-
         assert file_link.is_symlink()
-
         assert file_link.resolve() == file_target.resolve()
 
-    def test_create_temp_path(self, monkeypatch):
-        def fake_mkdtemp():
-            temp_path = Path("/tmp/temp_test")
-            temp_path.mkdir()
-            return temp_path
-
-        monkeypatch.setattr(tempfile, "mkdtemp", fake_mkdtemp)
-
+    def test_create_temp_path(self, fake_mkdtemp):
         temp_dir = AppInstaller.create_temp_path()
 
         assert temp_dir.exists()
         assert temp_dir.is_dir()
 
-        temp_dir.rmdir()
-
-    def test_create_temp_path_with_path(self, monkeypatch):
-        def fake_mkdtemp():
-            temp_path = Path("/tmp/temp_test")
-            temp_path.mkdir()
-            return temp_path
-
-        monkeypatch.setattr(tempfile, "mkdtemp", fake_mkdtemp)
-
+    def test_create_temp_path_with_path(self, fake_mkdtemp):
         temp_file = AppInstaller.create_temp_path('my_file.txt')
         temp_file.touch()
 
@@ -72,11 +71,8 @@ class TestAppInstaller:
         assert temp_file.is_file()
         assert temp_file.name == 'my_file.txt'
 
-        temp_file.unlink()
-        temp_file.parent.rmdir()
-
-    def test_get_asset_url_from_github(self, monkeypatch):
-        mockreturn = {
+    def test_get_asset_url_from_github_success(self, monkeypatch, fake_github_response):
+        payload = {
             "assets": [
                 {
                     "browser_download_url": "https://github.com/owner/repo/asset/dotfiles_toolkit_LINUX_x86_64.tar.gz"
@@ -84,10 +80,11 @@ class TestAppInstaller:
             ]
         }
 
-        def fake_urlopen(url):
-            return makeFakeResponse(mockreturn)
-
-        monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+        monkeypatch.setattr(
+            urllib.request,
+            "urlopen",
+            lambda _: fake_github_response(payload)
+        )
 
         release_url = AppInstaller.get_asset_url_from_github(
             owner="gabsprates",
@@ -95,10 +92,10 @@ class TestAppInstaller:
             filter=lambda url: url.lower().endswith("_linux_x86_64.tar.gz"),
         )
 
-        assert release_url == mockreturn["assets"][0]["browser_download_url"]
+        assert release_url == payload["assets"][0]["browser_download_url"]
 
-    def test_get_asset_url_from_github_error(self, monkeypatch):
-        mockreturn = {
+    def test_get_asset_url_from_github_not_found(self, monkeypatch, fake_github_response):
+        payload = {
             "assets": [
                 {
                     "browser_download_url": "https://github.com/owner/repo/asset/dotfiles_toolkit_LINUX_x86_64.zip"
@@ -106,10 +103,11 @@ class TestAppInstaller:
             ]
         }
 
-        def fake_urlopen(url):
-            return makeFakeResponse(mockreturn)
-
-        monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+        monkeypatch.setattr(
+            urllib.request,
+            "urlopen",
+            lambda _: fake_github_response(payload)
+        )
 
         with pytest.raises(FileNotFoundError):
             _ = AppInstaller.get_asset_url_from_github(
@@ -118,30 +116,25 @@ class TestAppInstaller:
                 filter=lambda url: url.lower().endswith("_linux_x86_64.tar.gz"),
             )
 
-    def test_download(self, monkeypatch):
-        base_temp_dir = Path("/tmp/temp_test")
-
+    def test_download(self, monkeypatch, tmp_path):
         def fake_mkdtemp():
-            temp_path = base_temp_dir
-            temp_path.mkdir()
-            return temp_path
+            return tmp_path
 
         def fake_urlretrieve(url, filename):
-            temp_file = base_temp_dir.joinpath(filename)
+            temp_file = tmp_path.joinpath(filename)
             temp_file.touch()
-            return temp_file
+            return temp_file, None
 
         monkeypatch.setattr(tempfile, "mkdtemp", fake_mkdtemp)
         monkeypatch.setattr(urllib.request, "urlretrieve", fake_urlretrieve)
 
-        url = "https://github.com/asdf-vm/asdf/releases/download/v0.18.1/asdf-v0.18.1-darwin-arm64.tar.gz"
-        filename = "asdf.tar.gz"
+        filename = "asset.tar.gz"
 
-        temp_file = AppInstaller.download(url, filename)
+        temp_file = AppInstaller.download(
+            "https://example.com/download/asset.tar.gz",
+            filename
+        )
 
         assert temp_file.exists()
         assert temp_file.is_file()
         assert temp_file.name == filename
-
-        temp_file.unlink()
-        temp_file.parent.rmdir()
