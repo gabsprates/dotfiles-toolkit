@@ -16,3 +16,6 @@ readme = "README.md"
 
 [project.optional-dependencies]
 dev = ["pytest==9.0.2"]
+
+[tool.setuptools.package-dir]
+dotfiles_toolkit = "dotfiles_toolkit"
