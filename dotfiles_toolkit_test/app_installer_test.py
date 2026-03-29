@@ -3,7 +3,7 @@ import pytest
 import tempfile
 import urllib.request
 
-from .app_installer import AppInstaller
+from dotfiles_toolkit.app_installer import AppInstaller
 from pathlib import Path
 
 
