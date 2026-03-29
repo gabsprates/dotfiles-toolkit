@@ -30,3 +30,9 @@ class InstallManager:
                         app_name: app_class
                     })
 
+    def register(self, app_name: str):
+        if (self.__available_apps.get(app_name) == None):
+            raise KeyError()
+
+        self.apps.append(app_name)
+

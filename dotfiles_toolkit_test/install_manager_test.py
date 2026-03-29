@@ -21,3 +21,13 @@ class TestInstallManager:
             'fake_app_a', 'fake_app_b',
         }
 
+    def test_register_app(self):
+        install_manager = InstallManager(
+            apps_path=fake_apps_path,
+            distro='ubuntu',
+        )
+
+        install_manager.register('fake_app_a')
+
+        assert install_manager.apps == ['fake_app_a']
+
