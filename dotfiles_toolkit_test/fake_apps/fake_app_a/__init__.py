@@ -6,7 +6,9 @@ class FakeAppAInstaller(AppInstaller):
         pass
 
     def install(self):
+        AppInstaller.create_temp_path('fake_app_a.install').touch()
         pass
 
     def customize(self):
+        AppInstaller.create_temp_path('fake_app_a.customize').touch()
         pass

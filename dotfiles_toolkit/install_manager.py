@@ -4,6 +4,7 @@ import os
 
 from dotfiles_toolkit.app_installer import AppInstaller
 from pathlib import Path
+from typing import Dict, Type
 
 
 class InstallManager:
@@ -12,7 +13,7 @@ class InstallManager:
         self.apps_path = apps_path.resolve()
         self.distro = distro
 
-        self.__available_apps = {}
+        self.__available_apps: Dict[str, Type[AppInstaller]] = {}
 
         sys.path.append(str(self.apps_path))
 
@@ -36,3 +37,22 @@ class InstallManager:
 
         self.apps.append(app_name)
 
+    def install_apps(self):
+        """
+        Runs app .install() and .customize() methods for all
+        registered AppInstaller.
+        """
+        print(f"\n## Installing apps for: {self.distro.upper()}", '\n')
+
+        for app_name in self.apps:
+            app = self.__available_apps[app_name](
+                os_id=self.distro
+            )
+
+            print(f">>> Install [{app_name}]: start")
+            app.install()
+            print(f">>> Install [{app_name}]: done", '\n')
+
+            print(f">>> Customize [{app_name}]: start")
+            app.customize()
+            print(f">>> Customize [{app_name}]: done")
